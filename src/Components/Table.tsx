@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Virtuoso } from "react-virtuoso";
 import { Row } from "./Row";
 import { Response } from "../Types/data";
