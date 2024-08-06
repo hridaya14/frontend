@@ -13,7 +13,7 @@ const App = React.memo(() => {
     useEffect( () => {
       const fetchData = async () => {
         try{
-          const res = await fetch('http://localhost:3000/data');
+          const res = await fetch('https://server-vg3c.onrender.com/data');
           const parsed = await res.json();
           setData(parsed)
           setLoading(false)
