@@ -1,143 +1,57 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { VariableSizeList as Variable } from 'react-window';
+import { useEffect, useState } from 'react';
 import './App.css';
-import { useWindowResize } from './useWindowResize';
+import Table from './Components/Table';
+import { Response } from './Types/data';
+import React from 'react';
 
-type Data = {
-  type?: string,
-  "properties.MAPBLKLOT"?: string,
-  "properties.BLKLOT"?: string,
-  "properties.BLOCK_NUM"?: string,
-  "properties.LOT_NUM"?: string,
-  "properties.FROM_ST"?: string,
-  "properties.TO_ST"?: string,
-  "properties.STREET"?: string,
-  "properties.ST_TYPE"?: string,
-  "properties.ODD_EVEN"?: string,
-  "geometry.type"?: string,
-  "geometry.coordinates"?: Array<Record<string, [number, number, number]>>
-}
+const App = React.memo(() => {
+  const [showData , setShowData] = useState<boolean>(false);
+  const [data, setData] = useState<Response>([]);
+    const [loading, setLoading] = useState(true);
 
-type Response = Data[]
+    
+    useEffect( () => {
+      const fetchData = async () => {
+        try{
+          const res = await fetch('http://localhost:3000/data');
+          const parsed = await res.json();
+          setData(parsed)
+          setLoading(false)
+        
+        }
+        catch(err){
+          console.log("An error occured:" , err)
+        }
+      }
+  
+      fetchData();
+  
+    },[])
 
-const fetchData = async (): Promise<Response> => {
-  try {
-    const response = await fetch("http://localhost:3000/data");
-    const parsed = await response.json();
-    return parsed;
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    return [];
-  }
-}
-
-const Row = (({ index, data, setSize, windowWidth }: { index: number, data: Response, setSize: any, windowWidth: number }) => {
-  const item = data[index];
-  const rowRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (rowRef.current) {
-      setSize(index, rowRef.current.getBoundingClientRect().height);
+    if(loading){
+      return <div className='w-screen h-screen flex justify-center items-center bg-black text-white'>Loading...</div>
     }
-  }, [setSize, index, windowWidth]);
-
+    
   return (
-    <div ref={rowRef} className="flex items-start border-b py-2 border-gray-700">
-      <div className="w-1/12 p-2">{item.type || 'N/A'}</div>
-      <div className="w-1/12 p-2">{item['properties.MAPBLKLOT'] || 'N/A'}</div>
-      <div className="w-1/12 p-2">{item['properties.BLKLOT'] || 'N/A'}</div>
-      <div className="w-1/12 p-2">{item['properties.BLOCK_NUM'] || 'N/A'}</div>
-      <div className="w-1/12 p-2">{item['properties.LOT_NUM'] || 'N/A'}</div>
-      <div className="w-1/12 p-2">{item['properties.FROM_ST'] || 'N/A'}</div>
-      <div className="w-1/12 p-2">{item['properties.TO_ST'] || 'N/A'}</div>
-      <div className="w-1/12 p-2">{item['properties.STREET'] || 'N/A'}</div>
-      <div className="w-1/12 p-2">{item['properties.ST_TYPE'] || 'N/A'}</div>
-      <div className="w-1/12 p-2">{item['properties.ODD_EVEN'] || 'N/A'}</div>
-      <div className="w-1/12 p-2">{item['geometry.type'] || 'N/A'}</div>
-      <div className="w-72 p-2">
-        {item['geometry.coordinates'] ? (
-          item['geometry.coordinates'].map((coordObj, i) => (
-            <div key={i} className='flex flex-col gap-6 justify-around '>
-              {Object.values(coordObj).map((coordArray, j) => (
-                <div key={j} className='bg-gray-600 p-1 rounded-md text-xs'>
-                  [{coordArray.join(', ')}]
-                </div>
-              ))}
-            </div>
-          ))
-        ) : 'N/A'}
+    <div className='w-screen h-full  flex flex-col justify-between bg-black'>
+      <div className='h-full space-y-6 flex flex-col items-center'>
+        <h1 className='text-white text-4xl text-center py-4'>Data Table</h1>
+        <p className='text-center'>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Nulla consequatur voluptas odio iure possimus quod voluptate ducimus! Ex cupiditate laborum debitis molestiae accusamus doloremque, quasi, ipsum modi alias magnam illum.</p>
+        <ul className='flex flex-col items-center'>
+          <li>Item 1</li>
+          <li>Item 2</li>
+          <li>Item 3</li>
+        </ul>
+        <button onClick={() => setShowData(!showData)} className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl mx-auto'>Show Data</button>
+      </div>
+      {showData ? <Table Data ={data} /> : null}
+      <div>
+        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Libero quo quis optio sequi exercitationem repudiandae dolore magni, id omnis dolorum praesentium itaque sed modi explicabo atque expedita mollitia doloribus voluptatibus? Lorem ipsum dolor sit amet consectetur adipisicing elit. Quae, earum praesentium commodi optio enim nostrum nemo asperiores alias necessitatibus tempora. Sapiente, minus maxime! Magnam neque, maxime magni laudantium saepe dolores!</p>
       </div>
     </div>
   );
 });
 
-function App() {
-  const listRef = useRef<Variable>(null);
-  const [data, setData] = useState<Response>([]);
-  const [loading, setLoading] = useState(true);
-  const sizeMap = useRef<Record<number, number>>({});
-  const setSize = useCallback((index: number, size: number) => {
-    sizeMap.current = { ...sizeMap.current, [index]: size };
-    if (listRef.current) {
-      listRef.current.resetAfterIndex(index);
-    }
-  }, []);
-  const [windowWidth] = useWindowResize();
-
-  useEffect(() => {
-    const getData = async () => {
-      const data = await fetchData();
-      setData(data);
-      setLoading(false);
-    }
-    getData();
-  }, []);
-
-  return (
-    <div className="h-screen w-screen bg-gray-900 p-4 overflow-hidden">
-      {loading ? (
-        <p className="text-white text-center">Loading...</p>
-      ) : (
-        <div className="flex flex-col overflow-hidden ">
-          <div className="flex border-b border-gray-700 bg-gray-800 text-white sticky top-0">
-            <div className="w-1/12 p-2">Type</div>
-            <div className="w-1/12 p-2">MAPBLKLOT</div>
-            <div className="w-1/12 p-2">BLKLOT</div>
-            <div className="w-1/12 p-2">BLOCK_NUM</div>
-            <div className="w-1/12 p-2">LOT_NUM</div>
-            <div className="w-1/12 p-2">From Street</div>
-            <div className="w-1/12 p-2">To Street</div>
-            <div className="w-1/12 p-2">Street</div>
-            <div className="w-1/12 p-2">Street Type</div>
-            <div className="w-1/12 p-2">Odd/Even</div>
-            <div className="w-1/12 p-2">Geometry Type</div>
-            <div className="w-72 p-2 text-start">Coordinates</div>
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <Variable
-              height={window.innerHeight - 64}
-              itemCount={data.length}
-              width={"100%"}
-              itemData={data}
-              itemSize={(index) => sizeMap.current[index] || 50}
-              ref={listRef}
-            >
-              {({ data, index, style }) => (
-                <div style={style}>
-                  <Row
-                    data={data}
-                    index={index}
-                    setSize={setSize}
-                    windowWidth={windowWidth}
-                  />
-                </div>
-              )}
-            </Variable>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default App;
+
+
